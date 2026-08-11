@@ -1,8 +1,7 @@
-
-import React, { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 
 function parseColor(color) {
-    const fallback = { r: 99, g: 102, b: 241 };
+    const fallback = { r: 129, g: 140, b: 248 };
     if (!color) return fallback;
     if (color.startsWith('#')) {
         let hex = color.slice(1);
@@ -24,14 +23,20 @@ function parseColor(color) {
     return fallback;
 }
 
+/**
+ * CursorAnimations Component
+ *
+ * Renders high-visibility animated sparkle stars & magic comet dust trail.
+ * Works seamlessly across Desktop, Tablet (iPad), and Mobile (iPhone/Android).
+ */
 const CursorAnimations = ({
     trailStyle = 'comet',
     trailColor = '#818cf8',
-    particleSize = 6,
-    trailIntensity = 6,
-    fadeSpeed = 0.45,
+    particleSize = 8,
+    trailIntensity = 8,
+    fadeSpeed = 0.55,
     flowSpeed = 0.6,
-    zIndex = 9999
+    zIndex = 99999
 }) => {
     const containerRef = useRef(null);
     const canvasRef = useRef(null);
@@ -40,7 +45,7 @@ const CursorAnimations = ({
     const cometSparksRef = useRef([]);
     const bubblesRef = useRef([]);
     const animationFrameRef = useRef(null);
-    const mouseRef = useRef({ x: -100, y: -100, lastX: -100, lastY: -100 });
+    const mouseRef = useRef({ x: -100, y: -100, lastX: -100, lastY: -100, active: false });
     const reducedMotionRef = useRef(false);
 
     const rgbRef = useRef(parseColor(trailColor));
@@ -49,7 +54,7 @@ const CursorAnimations = ({
 
     useEffect(() => {
         const isLight = document.body.classList.contains('light-theme');
-        const activeColor = isLight ? '#6366f1' : trailColor;
+        const activeColor = isLight ? '#4f46e5' : trailColor;
         rgbRef.current = parseColor(activeColor);
         trailColorRef.current = activeColor;
     }, [trailColor]);
@@ -89,22 +94,22 @@ const CursorAnimations = ({
 
     const spawnParticles = useCallback((x, y, vx, vy) => {
         const now = performance.now();
-        const count = Math.min(trailIntensity, 8);
+        const count = Math.min(trailIntensity, 10);
         for (let i = 0; i < count; i++) {
             const angle = Math.PI * 2 * i / count + Math.random() * 0.2;
-            const spread = particleSize * 0.2;
+            const spread = particleSize * 0.3;
             particlesRef.current.push({
                 x: x + Math.cos(angle) * spread * Math.random(),
                 y: y + Math.sin(angle) * spread * Math.random(),
-                size: particleSize * (0.8 + Math.random() * 0.4),
+                size: particleSize * (0.8 + Math.random() * 0.6),
                 opacity: 1,
                 birth: now,
                 vx: vx * flowSpeed * 0.1 + (Math.random() - 0.5) * 8,
                 vy: vy * flowSpeed * 0.1 + (Math.random() - 0.5) * 8
             });
         }
-        if (particlesRef.current.length > 100) {
-            particlesRef.current = particlesRef.current.slice(-100);
+        if (particlesRef.current.length > 120) {
+            particlesRef.current = particlesRef.current.slice(-120);
         }
     }, [flowSpeed, particleSize, trailIntensity]);
 
@@ -112,78 +117,136 @@ const CursorAnimations = ({
         if (reducedMotionRef.current) return;
         let lastTime = performance.now();
 
-        const handleMouseMove = (e) => {
-            const x = e.clientX;
-            const y = e.clientY;
+        const handlePointerInput = (e) => {
+            let clientX, clientY;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else if (e.changedTouches && e.changedTouches.length > 0) {
+                clientX = e.changedTouches[0].clientX;
+                clientY = e.changedTouches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            if (clientX === undefined || clientY === undefined) return;
+
+            const x = clientX;
+            const y = clientY;
             const now = performance.now();
             const dt = Math.max((now - lastTime) / 1000, 0.001);
             lastTime = now;
 
-            const vx = (x - mouseRef.current.lastX) / dt;
-            const vy = (y - mouseRef.current.lastY) / dt;
-            mouseRef.current = { x, y, lastX: x, lastY: y };
+            const lastX = mouseRef.current.lastX === -100 ? x : mouseRef.current.lastX;
+            const lastY = mouseRef.current.lastY === -100 ? y : mouseRef.current.lastY;
 
-            const dist = Math.sqrt(vx * vx + vy * vy) * dt;
-            if (dist > 1.5) {
-                if (trailStyleRef.current === 'constellation') {
-                    spawnParticles(x, y, vx, vy);
-                } else if (trailStyleRef.current === 'ribbon') {
-                    trailPointsRef.current.push({ x, y, time: now });
-                    const maxPoints = Math.floor(trailIntensity * 15);
-                    if (trailPointsRef.current.length > maxPoints) {
-                        trailPointsRef.current = trailPointsRef.current.slice(-maxPoints);
-                    }
-                } else if (trailStyleRef.current === 'comet') {
-                    const sparkCount = Math.floor(trailIntensity * 0.6);
-                    for (let i = 0; i < sparkCount; i++) {
-                        const angle = Math.atan2(vy, vx) + Math.PI + (Math.random() - 0.5) * 1.2;
-                        const speedVal = Math.random() * 2 + 0.5;
-                        cometSparksRef.current.push({
-                            x: x + (Math.random() - 0.5) * 6,
-                            y: y + (Math.random() - 0.5) * 6,
-                            size: particleSize * (0.3 + Math.random() * 0.6),
-                            opacity: 0.8 + Math.random() * 0.2,
-                            birth: now,
-                            vx: Math.cos(angle) * speedVal,
-                            vy: Math.sin(angle) * speedVal,
-                            rotation: Math.random() * Math.PI * 2,
-                            twinkle: Math.random() * Math.PI * 2
-                        });
-                    }
-                    if (cometSparksRef.current.length > 120) {
-                        cometSparksRef.current = cometSparksRef.current.slice(-120);
-                    }
-                } else if (trailStyleRef.current === 'bubbles') {
-                    const bubbleCount = Math.floor(trailIntensity * 0.4);
-                    for (let i = 0; i < bubbleCount; i++) {
-                        bubblesRef.current.push({
-                            x: x + (Math.random() - 0.5) * 20,
-                            y: y + (Math.random() - 0.5) * 20,
-                            size: particleSize * (0.6 + Math.random() * 1.2),
-                            opacity: 0.5 + Math.random() * 0.3,
-                            birth: now,
-                            vx: (Math.random() - 0.5) * 2,
-                            vy: -Math.random() * 2 - 0.5,
-                            wobble: Math.random() * Math.PI * 2,
-                            wobbleSpeed: 0.03 + Math.random() * 0.04
-                        });
-                    }
-                    if (bubblesRef.current.length > 80) {
-                        bubblesRef.current = bubblesRef.current.slice(-80);
-                    }
+            const vx = (x - lastX) / dt;
+            const vy = (y - lastY) / dt;
+            mouseRef.current = { x, y, lastX: x, lastY: y, active: true };
+
+            // Always spawn sparkles on movement or tap
+            const sparkCount = Math.max(Math.floor(trailIntensity * 0.8), 4);
+            for (let i = 0; i < sparkCount; i++) {
+                const angle = (Math.random() * Math.PI * 2);
+                const speedVal = Math.random() * 2.8 + 0.6;
+                cometSparksRef.current.push({
+                    x: x + (Math.random() - 0.5) * 12,
+                    y: y + (Math.random() - 0.5) * 12,
+                    size: particleSize * (0.5 + Math.random() * 0.8),
+                    opacity: 0.9 + Math.random() * 0.1,
+                    birth: now,
+                    vx: Math.cos(angle) * speedVal + vx * 0.02,
+                    vy: Math.sin(angle) * speedVal + vy * 0.02,
+                    rotation: Math.random() * Math.PI * 2,
+                    spinSpeed: (Math.random() - 0.5) * 0.1
+                });
+            }
+            if (cometSparksRef.current.length > 160) {
+                cometSparksRef.current = cometSparksRef.current.slice(-160);
+            }
+
+            if (trailStyleRef.current === 'constellation') {
+                spawnParticles(x, y, vx, vy);
+            } else if (trailStyleRef.current === 'ribbon') {
+                trailPointsRef.current.push({ x, y, time: now });
+                if (trailPointsRef.current.length > 25) {
+                    trailPointsRef.current = trailPointsRef.current.slice(-25);
+                }
+            } else if (trailStyleRef.current === 'bubbles') {
+                bubblesRef.current.push({
+                    x: x + (Math.random() - 0.5) * 20,
+                    y: y + (Math.random() - 0.5) * 20,
+                    size: particleSize * (0.6 + Math.random() * 1.2),
+                    opacity: 0.6,
+                    birth: now,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: -Math.random() * 2 - 0.5,
+                    wobble: Math.random() * Math.PI * 2,
+                    wobbleSpeed: 0.04
+                });
+                if (bubblesRef.current.length > 80) {
+                    bubblesRef.current = bubblesRef.current.slice(-80);
                 }
             }
         };
 
-        window.addEventListener('mousemove', handleMouseMove, { passive: true });
-        window.addEventListener('touchmove', (e) => {
-            if (e.touches[0]) handleMouseMove(e.touches[0]);
-        }, { passive: true });
+        window.addEventListener('mousemove', handlePointerInput, { passive: true });
+        window.addEventListener('pointermove', handlePointerInput, { passive: true });
+        window.addEventListener('touchstart', handlePointerInput, { passive: true });
+        window.addEventListener('touchmove', handlePointerInput, { passive: true });
+        window.addEventListener('pointerdown', handlePointerInput, { passive: true });
 
         return () => {
-            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mousemove', handlePointerInput);
+            window.removeEventListener('pointermove', handlePointerInput);
+            window.removeEventListener('touchstart', handlePointerInput);
+            window.removeEventListener('touchmove', handlePointerInput);
+            window.removeEventListener('pointerdown', handlePointerInput);
         };
     }, [spawnParticles, trailIntensity, particleSize]);
+
+    // Helper: Draw 4-pointed glowing sparkle star
+    const drawSparkleStar = useCallback((ctx, x, y, size, rotation, alpha, rgb) => {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rotation);
+
+        // 1. Glowing outer halo
+        ctx.shadowColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha * 0.95})`;
+        ctx.shadowBlur = size * 2.2;
+
+        // 2. Outer 4-Point Star Fill (Theme Indigo/Violet)
+        ctx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+        ctx.beginPath();
+        for (let i = 0; i < 8; i++) {
+            const angle = (i * Math.PI) / 4;
+            const r = i % 2 === 0 ? size : size * 0.18; // Sharp 4-point sparkle star ratio
+            const px = Math.cos(angle) * r;
+            const py = Math.sin(angle) * r;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+
+        // 3. Bright White Inner 4-Point Sparkle Core
+        ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(alpha * 1.25, 1)})`;
+        ctx.shadowBlur = 4;
+        ctx.shadowColor = '#ffffff';
+        ctx.beginPath();
+        for (let i = 0; i < 8; i++) {
+            const angle = (i * Math.PI) / 4;
+            const r = i % 2 === 0 ? size * 0.45 : size * 0.08;
+            const px = Math.cos(angle) * r;
+            const py = Math.sin(angle) * r;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.restore();
+    }, []);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -193,219 +256,41 @@ const CursorAnimations = ({
 
         const maxAge = fadeSpeed * 1000;
 
-        const drawRibbon = (points, now) => {
-            if (points.length < 2) return;
-            const rgb = rgbRef.current;
-            const baseWidth = particleSize * 2;
-            const activePoints = points.filter((p) => now - p.time < maxAge);
-            trailPointsRef.current = activePoints;
-            if (activePoints.length < 2) return;
-
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-
-            for (let i = 1; i < activePoints.length; i++) {
-                const p0 = activePoints[i - 1];
-                const p1 = activePoints[i];
-                const age0 = (now - p0.time) / maxAge;
-                const age1 = (now - p1.time) / maxAge;
-                const opacity = Math.pow(1 - age1, 2) * 0.85;
-                const width = baseWidth * (1 - age1 * 0.7);
-                if (width < 0.5) continue;
-
-                const gradient = ctx.createLinearGradient(p0.x, p0.y, p1.x, p1.y);
-                const opacity0 = Math.pow(1 - age0, 2) * 0.85;
-                gradient.addColorStop(0, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity0})`);
-                gradient.addColorStop(1, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`);
-
-                ctx.strokeStyle = gradient;
-                ctx.lineWidth = width;
-                ctx.beginPath();
-                ctx.moveTo(p0.x, p0.y);
-
-                if (i < activePoints.length - 1) {
-                    const p2 = activePoints[i + 1];
-                    const endX = (p1.x + p2.x) / 2;
-                    const endY = (p1.y + p2.y) / 2;
-                    ctx.quadraticCurveTo(p1.x, p1.y, endX, endY);
-                } else {
-                    ctx.lineTo(p1.x, p1.y);
-                }
-                ctx.stroke();
-            }
-
-            if (activePoints.length > 0) {
-                const tip = activePoints[activePoints.length - 1];
-                const tipGlow = ctx.createRadialGradient(tip.x, tip.y, 0, tip.x, tip.y, baseWidth * 1.5);
-                tipGlow.addColorStop(0, `rgba(255, 255, 255, 0.9)`);
-                tipGlow.addColorStop(0.3, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.6)`);
-                tipGlow.addColorStop(1, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0)`);
-                ctx.beginPath();
-                ctx.arc(tip.x, tip.y, baseWidth * 1.5, 0, Math.PI * 2);
-                ctx.fillStyle = tipGlow;
-                ctx.fill();
-            }
-        };
-
-        const drawComet = (now) => {
+        const drawCometSparks = (now) => {
             const rgb = rgbRef.current;
             const newSparks = [];
 
-            for (const spark of cometSparksRef.current) {
-                const age = now - spark.birth;
+            for (const s of cometSparksRef.current) {
+                const age = now - s.birth;
                 if (age > maxAge) continue;
 
-                spark.x += spark.vx;
-                spark.y += spark.vy;
-                spark.vx *= 0.98;
-                spark.vy *= 0.98;
-                spark.twinkle += 0.15;
+                s.x += s.vx;
+                s.y += s.vy;
+                s.vx *= 0.94;
+                s.vy *= 0.94;
+                s.rotation += s.spinSpeed || 0.05;
 
-                const normalizedAge = age / maxAge;
-                const baseFade = Math.pow(1 - normalizedAge, 2);
-                const twinkleFactor = 0.7 + 0.3 * Math.sin(spark.twinkle);
-                spark.opacity = baseFade * twinkleFactor;
-                const size = spark.size * (1 - normalizedAge * 0.5);
-                if (size < 0.5) continue;
+                const progress = age / maxAge;
+                const alpha = (1 - progress) * s.opacity;
+                const size = s.size * (1 - progress * 0.4);
 
-                ctx.save();
-                ctx.translate(spark.x, spark.y);
-                ctx.rotate(spark.rotation + normalizedAge * 2);
+                if (size > 0.5 && alpha > 0.05) {
+                    drawSparkleStar(ctx, s.x, s.y, size, s.rotation, alpha, rgb);
+                }
 
-                const innerGlow = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 1.8);
-                innerGlow.addColorStop(0, `rgba(255, 255, 255, ${spark.opacity * 0.95})`);
-                innerGlow.addColorStop(0.3, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${spark.opacity * 0.75})`);
-                innerGlow.addColorStop(1, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0)`);
-                ctx.beginPath();
-                ctx.arc(0, 0, size * 1.8, 0, Math.PI * 2);
-                ctx.fillStyle = innerGlow;
-                ctx.fill();
-
-                ctx.strokeStyle = `rgba(255, 255, 255, ${spark.opacity * 0.7})`;
-                ctx.lineWidth = size * 0.35;
-                ctx.lineCap = 'round';
-
-                ctx.beginPath(); ctx.moveTo(-size * 1.2, 0); ctx.lineTo(size * 1.2, 0); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(0, -size * 1.2); ctx.lineTo(0, size * 1.2); ctx.stroke();
-
-                ctx.restore();
-                newSparks.push(spark);
+                newSparks.push(s);
             }
             cometSparksRef.current = newSparks;
-
-            const headX = mouseRef.current.x;
-            const headY = mouseRef.current.y;
-            if (headX < 0 || headY < 0) return;
-
-            const headSize = particleSize * 1.2;
-
-            const outerGlow = ctx.createRadialGradient(headX, headY, 0, headX, headY, headSize * 3);
-            outerGlow.addColorStop(0, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.45)`);
-            outerGlow.addColorStop(0.5, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.15)`);
-            outerGlow.addColorStop(1, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0)`);
-            ctx.beginPath(); ctx.arc(headX, headY, headSize * 3, 0, Math.PI * 2); ctx.fillStyle = outerGlow; ctx.fill();
-
-            const midGlow = ctx.createRadialGradient(headX, headY, 0, headX, headY, headSize * 1.5);
-            midGlow.addColorStop(0, `rgba(255, 255, 255, 0.95)`);
-            midGlow.addColorStop(0.5, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.8)`);
-            midGlow.addColorStop(1, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0)`);
-            ctx.beginPath(); ctx.arc(headX, headY, headSize * 1.5, 0, Math.PI * 2); ctx.fillStyle = midGlow; ctx.fill();
-
-            const coreGlow = ctx.createRadialGradient(headX, headY, 0, headX, headY, headSize * 0.7);
-            coreGlow.addColorStop(0, `rgba(255, 255, 255, 1)`);
-            coreGlow.addColorStop(0.6, `rgba(255, 255, 255, 0.85)`);
-            coreGlow.addColorStop(1, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.6)`);
-            ctx.beginPath(); ctx.arc(headX, headY, headSize * 0.7, 0, Math.PI * 2); ctx.fillStyle = coreGlow; ctx.fill();
         };
 
-        const drawBubbles = (now) => {
+        const drawActiveCursorStar = (now) => {
+            if (!mouseRef.current.active || mouseRef.current.x < 0) return;
             const rgb = rgbRef.current;
-            const newBubbles = [];
-            for (const bubble of bubblesRef.current) {
-                const age = now - bubble.birth;
-                if (age > maxAge * 1.5) continue;
+            const pulse = 1 + Math.sin(now * 0.008) * 0.2;
+            const rot = (now * 0.003) % (Math.PI * 2);
 
-                bubble.wobble += bubble.wobbleSpeed;
-                bubble.x += bubble.vx + Math.sin(bubble.wobble) * 0.5;
-                bubble.y += bubble.vy;
-                bubble.vy *= 0.995;
-                bubble.vx *= 0.98;
-
-                const normalizedAge = age / (maxAge * 1.5);
-                const fadeOut = normalizedAge > 0.7 ? 1 - (normalizedAge - 0.7) / 0.3 : 1;
-                bubble.opacity = bubble.opacity * fadeOut;
-                const size = bubble.size * (1 + normalizedAge * 0.3);
-                if (bubble.opacity < 0.05) continue;
-
-                ctx.save();
-                ctx.beginPath(); ctx.arc(bubble.x, bubble.y, size, 0, Math.PI * 2);
-                ctx.strokeStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${bubble.opacity * 0.6})`;
-                ctx.lineWidth = 1.5;
-                ctx.stroke();
-
-                const bubbleGradient = ctx.createRadialGradient(bubble.x - size * 0.3, bubble.y - size * 0.3, 0, bubble.x, bubble.y, size);
-                bubbleGradient.addColorStop(0, `rgba(255, 255, 255, ${bubble.opacity * 0.35})`);
-                bubbleGradient.addColorStop(0.5, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${bubble.opacity * 0.2})`);
-                bubbleGradient.addColorStop(1, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${bubble.opacity * 0.05})`);
-                ctx.beginPath(); ctx.arc(bubble.x, bubble.y, size, 0, Math.PI * 2); ctx.fillStyle = bubbleGradient; ctx.fill();
-
-                const highlightSize = size * 0.35;
-                const highlightX = bubble.x - size * 0.35;
-                const highlightY = bubble.y - size * 0.35;
-                const highlight = ctx.createRadialGradient(highlightX, highlightY, 0, highlightX, highlightY, highlightSize);
-                highlight.addColorStop(0, `rgba(255, 255, 255, ${bubble.opacity * 0.75})`);
-                highlight.addColorStop(1, `rgba(255, 255, 255, 0)`);
-                ctx.beginPath(); ctx.arc(highlightX, highlightY, highlightSize, 0, Math.PI * 2); ctx.fillStyle = highlight; ctx.fill();
-
-                ctx.restore();
-                newBubbles.push(bubble);
-            }
-            bubblesRef.current = newBubbles;
-        };
-
-        const drawConstellation = (now) => {
-            const newParticles = [];
-            const rgb = rgbRef.current;
-
-            for (const particle of particlesRef.current) {
-                const age = now - particle.birth;
-                if (age > maxAge) continue;
-
-                particle.vx *= 0.96;
-                particle.vy *= 0.96;
-                particle.x += particle.vx * 0.016;
-                particle.y += particle.vy * 0.016;
-
-                const normalizedAge = age / maxAge;
-                particle.opacity = Math.pow(1 - normalizedAge, 1.5);
-                const size = particle.size * (1 - normalizedAge * 0.2);
-
-                const gradient = ctx.createRadialGradient(particle.x, particle.y, 0, particle.x, particle.y, size);
-                gradient.addColorStop(0, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${particle.opacity})`);
-                gradient.addColorStop(0.7, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${particle.opacity * 0.6})`);
-                gradient.addColorStop(1, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0)`);
-                ctx.beginPath(); ctx.arc(particle.x, particle.y, size, 0, Math.PI * 2); ctx.fillStyle = gradient; ctx.fill();
-
-                newParticles.push(particle);
-            }
-
-            const connectLimit = Math.min(newParticles.length, 40);
-            ctx.lineWidth = 1;
-            for (let i = 0; i < connectLimit; i++) {
-                const p1 = newParticles[i];
-                for (let j = i + 1; j < Math.min(i + 5, connectLimit); j++) {
-                    const p2 = newParticles[j];
-                    const dx = p2.x - p1.x;
-                    const dy = p2.y - p1.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist < particleSize * 5) {
-                        const opacity = (1 - dist / (particleSize * 5)) * p1.opacity * p2.opacity * 0.5;
-                        ctx.strokeStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`;
-                        ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
-                    }
-                }
-            }
-            particlesRef.current = newParticles;
+            // Draw glowing head sparkle star directly at pointer coordinates
+            drawSparkleStar(ctx, mouseRef.current.x, mouseRef.current.y, particleSize * 1.3 * pulse, rot, 0.95, rgb);
         };
 
         const animate = () => {
@@ -416,15 +301,11 @@ const CursorAnimations = ({
             const now = performance.now();
             ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
-            if (trailStyleRef.current === 'ribbon') {
-                drawRibbon(trailPointsRef.current, now);
-            } else if (trailStyleRef.current === 'comet') {
-                drawComet(now);
-            } else if (trailStyleRef.current === 'bubbles') {
-                drawBubbles(now);
-            } else {
-                drawConstellation(now);
-            }
+            // Render live sparkle star particles
+            drawCometSparks(now);
+
+            // Render glowing cursor star at current pointer position
+            drawActiveCursorStar(now);
 
             animationFrameRef.current = requestAnimationFrame(animate);
         };
@@ -433,7 +314,7 @@ const CursorAnimations = ({
         return () => {
             if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
         };
-    }, [fadeSpeed, particleSize]);
+    }, [fadeSpeed, particleSize, drawSparkleStar]);
 
     return (
         <div
@@ -447,6 +328,7 @@ const CursorAnimations = ({
                 height: '100vh',
                 overflow: 'hidden',
                 pointerEvents: 'none',
+                touchAction: 'none',
                 zIndex: zIndex,
                 background: 'transparent'
             }}
@@ -460,7 +342,8 @@ const CursorAnimations = ({
                     left: 0,
                     width: '100%',
                     height: '100%',
-                    pointerEvents: 'none'
+                    pointerEvents: 'none',
+                    touchAction: 'none'
                 }}
             />
         </div>

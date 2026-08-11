@@ -6,7 +6,7 @@ import { motion } from 'motion/react';
  * Inspired by Framer Service_section (https://framer.com/m/Service-section-a2j24v.js@aAfooHiaMhCLAPzZAS79)
  *
  * 3D rotating octagonal cylinder carousel presenting key project technical highlights.
- * Includes spring physics rotation, responsive mobile stack, and theme-adaptive text contrast.
+ * Features full cover feature screenshot headers on every 3D card.
  */
 
 const PROJECT_CARDS = [
@@ -18,7 +18,7 @@ const PROJECT_CARDS = [
         ctaText: 'Explore Auth →',
         ctaUrl: '/login',
         accentColor: '#6366f1',
-        icon: '🔒'
+        image: 'https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&w=600&q=80'
     },
     {
         id: 'rbac',
@@ -28,7 +28,7 @@ const PROJECT_CARDS = [
         ctaText: 'View Roles →',
         ctaUrl: '/#about',
         accentColor: '#8b5cf6',
-        icon: '🛡️'
+        image: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=600&q=80'
     },
     {
         id: 'mern-stack',
@@ -38,7 +38,7 @@ const PROJECT_CARDS = [
         ctaText: 'Learn Stack →',
         ctaUrl: '/#about',
         accentColor: '#3b82f6',
-        icon: '⚡'
+        image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=600&q=80'
     },
     {
         id: 'webgl-shaders',
@@ -48,7 +48,7 @@ const PROJECT_CARDS = [
         ctaText: 'View Shaders →',
         ctaUrl: '/#home',
         accentColor: '#ec4899',
-        icon: '🔮'
+        image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80'
     },
     {
         id: 'framer-motion',
@@ -58,7 +58,7 @@ const PROJECT_CARDS = [
         ctaText: 'See Motion →',
         ctaUrl: '/#about',
         accentColor: '#f59e0b',
-        icon: '✨'
+        image: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=600&q=80'
     },
     {
         id: 'dual-theme',
@@ -68,7 +68,7 @@ const PROJECT_CARDS = [
         ctaText: 'Toggle Theme →',
         ctaUrl: '/#about',
         accentColor: '#10b981',
-        icon: '🌗'
+        image: 'https://images.unsplash.com/photo-1508739773434-c26b3d09e071?auto=format&fit=crop&w=600&q=80'
     },
     {
         id: 'axios-services',
@@ -78,17 +78,17 @@ const PROJECT_CARDS = [
         ctaText: 'API Layer →',
         ctaUrl: '/#about',
         accentColor: '#14b8a6',
-        icon: '🔌'
+        image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80'
     },
     {
         id: 'interactive-3d',
-        title: 'Interactive 3D Location',
-        description: 'Interactive location node with mouse-parallax 3D tilt perspective.',
+        title: 'Interactive 3D Showcase',
+        description: 'Interactive project node with mouse-parallax 3D tilt perspective.',
         tag: 'Interactive',
         ctaText: 'Get in Touch →',
         ctaUrl: '/#contact',
         accentColor: '#f43f5e',
-        icon: '🌐'
+        image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80'
     }
 ];
 
@@ -102,26 +102,63 @@ const ServiceCard = ({ card }) => {
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
             style={{
-                style: hovered ? { borderColor: card.accentColor } : {}
+                borderColor: hovered ? card.accentColor : 'rgba(255, 255, 255, 0.15)',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                padding: 0
             }}
         >
-            {/* Top Icon Badge & Accent Banner */}
-            <div className="service-3d-card__banner">
-                <div
-                    className="service-3d-card__icon-wrapper"
+            {/* Full Cover Header Image */}
+            <div
+                style={{
+                    position: 'relative',
+                    width: '100%',
+                    height: '180px',
+                    overflow: 'hidden',
+                    flexShrink: 0
+                }}
+            >
+                <img
+                    src={card.image}
+                    alt={card.title}
                     style={{
-                        background: `${card.accentColor}25`,
-                        border: `1px solid ${card.accentColor}40`,
-                        color: card.accentColor
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        transition: 'transform 0.5s ease',
+                        transform: hovered ? 'scale(1.08)' : 'scale(1.0)',
+                        filter: 'brightness(0.92) contrast(1.05)'
                     }}
-                >
-                    <span className="service-3d-card__icon">{card.icon}</span>
-                </div>
+                />
 
+                {/* Dark Gradient Transition Overlay */}
+                <div
+                    style={{
+                        position: 'absolute',
+                        inset: 0,
+                        background: 'linear-gradient(to bottom, rgba(15, 12, 41, 0.1) 0%, rgba(15, 12, 41, 0.85) 100%)'
+                    }}
+                />
+
+                {/* Tag Overlay Badge */}
                 {card.tag && (
                     <span
-                        className="service-3d-card__tag"
-                        style={{ background: card.accentColor }}
+                        style={{
+                            position: 'absolute',
+                            top: '12px',
+                            left: '12px',
+                            background: card.accentColor,
+                            color: '#ffffff',
+                            padding: '4px 10px',
+                            borderRadius: '6px',
+                            fontSize: '0.72rem',
+                            fontWeight: 800,
+                            letterSpacing: '0.5px',
+                            textTransform: 'uppercase',
+                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.35)',
+                            zIndex: 3
+                        }}
                     >
                         {card.tag}
                     </span>
@@ -129,13 +166,28 @@ const ServiceCard = ({ card }) => {
             </div>
 
             {/* Content Area */}
-            <div className="service-3d-card__body">
-                <h3 className="service-3d-card__title">{card.title}</h3>
-                <p className="service-3d-card__desc">{card.description}</p>
+            <div
+                className="service-3d-card__body"
+                style={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    padding: '16px'
+                }}
+            >
+                <div>
+                    <h3 className="service-3d-card__title" style={{ margin: '0 0 8px', fontSize: '1.15rem' }}>
+                        {card.title}
+                    </h3>
+                    <p className="service-3d-card__desc" style={{ margin: 0, fontSize: '0.85rem', lineHeight: 1.45 }}>
+                        {card.description}
+                    </p>
+                </div>
                 <a
                     href={card.ctaUrl}
                     className="service-3d-card__cta"
-                    style={{ color: card.accentColor }}
+                    style={{ color: card.accentColor, fontWeight: 700, marginTop: '12px' }}
                 >
                     {card.ctaText}
                 </a>
@@ -147,28 +199,41 @@ const ServiceCard = ({ card }) => {
 // Mobile Card Component
 const MobileCard = ({ card }) => {
     return (
-        <div className="service-3d-mobile-card">
-            <div className="service-3d-card__banner">
-                <div
-                    className="service-3d-card__icon-wrapper"
-                    style={{
-                        background: `${card.accentColor}25`,
-                        border: `1px solid ${card.accentColor}40`,
-                        color: card.accentColor
-                    }}
-                >
-                    <span>{card.icon}</span>
-                </div>
+        <div className="service-3d-mobile-card" style={{ overflow: 'hidden', padding: 0, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ position: 'relative', width: '100%', height: '150px', overflow: 'hidden', flexShrink: 0 }}>
+                <img
+                    src={card.image}
+                    alt={card.title}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.9)' }}
+                />
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(15, 12, 41, 0.1), rgba(15, 12, 41, 0.85))' }} />
                 {card.tag && (
-                    <span className="service-3d-card__tag" style={{ background: card.accentColor }}>
+                    <span
+                        style={{
+                            position: 'absolute',
+                            top: '10px',
+                            left: '10px',
+                            background: card.accentColor,
+                            color: '#ffffff',
+                            padding: '3px 8px',
+                            borderRadius: '5px',
+                            fontSize: '0.68rem',
+                            fontWeight: 800,
+                            letterSpacing: '0.5px',
+                            textTransform: 'uppercase',
+                            zIndex: 3
+                        }}
+                    >
                         {card.tag}
                     </span>
                 )}
             </div>
-            <div className="service-3d-card__body">
-                <h3 className="service-3d-card__title">{card.title}</h3>
-                <p className="service-3d-card__desc">{card.description}</p>
-                <a href={card.ctaUrl} className="service-3d-card__cta" style={{ color: card.accentColor }}>
+            <div className="service-3d-card__body" style={{ padding: '14px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                    <h3 className="service-3d-card__title" style={{ margin: '0 0 6px' }}>{card.title}</h3>
+                    <p className="service-3d-card__desc" style={{ margin: 0 }}>{card.description}</p>
+                </div>
+                <a href={card.ctaUrl} className="service-3d-card__cta" style={{ color: card.accentColor, fontWeight: 700, marginTop: '10px' }}>
                     {card.ctaText}
                 </a>
             </div>

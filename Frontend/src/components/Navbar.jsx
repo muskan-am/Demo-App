@@ -37,10 +37,25 @@ const Navbar = () => {
     const [scrolled,   setScrolled]   = useState(false);
     const [loggingOut, setLoggingOut] = useState(false);
 
-    // Close mobile menu on route change
+    // Close mobile menu on route or hash change
     useEffect(() => {
         setMenuOpen(false);
-    }, [location.pathname]);
+    }, [location.pathname, location.hash]);
+
+    // Handle hash scroll on initial load or navigation
+    useEffect(() => {
+        if (location.hash) {
+            const sectionId = location.hash.replace('#', '');
+            const el = document.getElementById(sectionId);
+            if (el) {
+                setTimeout(() => {
+                    const yOffset = -70;
+                    const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                    window.scrollTo({ top: y, behavior: 'smooth' });
+                }, 150);
+            }
+        }
+    }, [location.hash, location.pathname]);
 
     // Detect scroll to toggle scrolled state
     useEffect(() => {
@@ -68,6 +83,33 @@ const Navbar = () => {
         } finally {
             logoutUser(navigate, '/');
         }
+    };
+
+    const handleNavClick = (sectionId) => (e) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        setMenuOpen(false);
+
+        if (location.pathname !== '/') {
+            navigate(`/#${sectionId}`);
+            return;
+        }
+
+        setTimeout(() => {
+            if (sectionId === 'home') {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+
+            const el = document.getElementById(sectionId);
+            if (el) {
+                const yOffset = -70;
+                const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                window.scrollTo({ top: y, behavior: 'smooth' });
+            }
+        }, 50);
     };
 
     const dashboardPath = user?.role === 'admin' ? '/admin' : '/dashboard';
@@ -128,17 +170,17 @@ const Navbar = () => {
                         {/* ---- Desktop Nav Links ---- */}
                         <ul className="navbar__links" role="list">
                             <li>
-                                <a href="/#home" className={`navbar__link${isActive('/') ? ' navbar__link--active' : ''}`}>
+                                <a href="/#home" onClick={handleNavClick('home')} className={`navbar__link${isActive('/') ? ' navbar__link--active' : ''}`}>
                                     Home
                                 </a>
                             </li>
                             <li>
-                                <a href="/#about" className="navbar__link">
+                                <a href="/#about" onClick={handleNavClick('about')} className="navbar__link">
                                     About
                                 </a>
                             </li>
                             <li>
-                                <a href="/#contact" className="navbar__link">
+                                <a href="/#contact" onClick={handleNavClick('contact')} className="navbar__link">
                                     Contact
                                 </a>
                             </li>
@@ -210,9 +252,9 @@ const Navbar = () => {
                                 exit="exit"
                             >
                                 <ul className="navbar__mobile-links" role="list">
-                                    <li><a href="/#home" className="navbar__mobile-link" onClick={() => setMenuOpen(false)}>Home</a></li>
-                                    <li><a href="/#about" className="navbar__mobile-link" onClick={() => setMenuOpen(false)}>About</a></li>
-                                    <li><a href="/#contact" className="navbar__mobile-link" onClick={() => setMenuOpen(false)}>Contact</a></li>
+                                    <li><a href="/#home" className="navbar__mobile-link" onClick={handleNavClick('home')} onTouchEnd={handleNavClick('home')}>Home</a></li>
+                                    <li><a href="/#about" className="navbar__mobile-link" onClick={handleNavClick('about')} onTouchEnd={handleNavClick('about')}>About</a></li>
+                                    <li><a href="/#contact" className="navbar__mobile-link" onClick={handleNavClick('contact')} onTouchEnd={handleNavClick('contact')}>Contact</a></li>
                                     
                                     <li className="navbar__mobile-divider" />
 

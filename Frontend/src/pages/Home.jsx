@@ -11,10 +11,10 @@ import ExpandedCard     from '../components/ExpandedCard';
 import StatsCounter     from '../components/StatsCounter';
 import Starsfield       from '../components/Starsfield';
 import CursorAnimations from '../components/CursorAnimations';
-import ScrollZoomReveal from '../components/ScrollZoomReveal';
 import ScrollFadeText   from '../components/ScrollFadeText';
+import AmbientVideo     from '../components/AmbientVideo';
 import ThreeDContactSection from '../components/ThreeDContactSection';
-import { motion }       from 'motion/react';
+import { motion}       from 'motion/react';
 
 const Home = () => {
     return (
@@ -54,14 +54,6 @@ const Home = () => {
                 <ScrollFadeText />
 
                 {/* ============================================================
-                    FRAMER SCROLL ZOOM REVEAL (VIDEO FROM ASSETS)
-                ============================================================ */}
-                <ScrollZoomReveal 
-                    leftText="OUR"
-                    rightText="PASSION"
-                />
-
-                {/* ============================================================
                     ABOUT SECTION (WITH EXPANDED CARD INTERACTION)
                 ============================================================ */}
                 <section id="about" className="about-section" aria-labelledby="about-title" style={{ position: 'relative', zIndex: 2 }}>
@@ -85,6 +77,34 @@ const Home = () => {
 
                         <ExpandedCard />
 
+                    </div>
+                </section>
+
+                {/* ============================================================
+                    FRAMER AMBIENT VIDEO SHOWCASE (DYNAMIC LIGHT GLOW)
+                ============================================================ */}
+                <section className="ambient-video-section" style={{ position: 'relative', zIndex: 2, padding: '40px 0 80px' }}>
+                    <div className="section-container">
+                        <motion.div 
+                            className="section-header"
+                            initial={{ opacity: 0, y: 30 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.6 }}
+                        >
+                            <span className="section-eyebrow">EXPERIENCE THE PLATFORM</span>
+                            <h2 className="section-title">OUR PASSION</h2>
+                            <p className="section-subtitle">
+                                Watch our platform in action with real-time dynamic ambient illumination.
+                            </p>
+                        </motion.div>
+
+                        <AmbientVideo 
+                            glowIntensity={0.85}
+                            glowBlur={60}
+                            glowSpread={25}
+                            borderRadius={24}
+                        />
                     </div>
                 </section>
 
