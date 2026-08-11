@@ -1,12 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion, useMotionValue, useTransform, useSpring } from 'motion/react';
 
-/**
- * ThreeDContactSection Component
- * Recreates the 3D Luxury "Let's Start a Conversation" Contact Form & Info Layout
- * Includes 3D tilt perspective, metallic typography, interactive map card, and custom form inputs.
- */
-
 const ThreeDContactSection = () => {
     const [formData, setFormData] = useState({
         fullName: '',

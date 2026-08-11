@@ -1,12 +1,7 @@
 import { useEffect, useRef, useState, startTransition } from 'react';
 import sampleVideo from '../assets/video.mp4';
 
-/**
- * AmbientVideo Component
- * Inspired by Framer AmbientVideo (https://framer.com/m/AmbientVideo-SZnd.js@OJhlrtu9JpdUpGnJg57v)
- *
- * Real-time canvas color extraction projects a live ambient glow matching the active video content colors.
- */
+
 
 const AmbientVideo = ({
     videoSrc = sampleVideo,

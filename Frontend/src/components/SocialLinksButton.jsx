@@ -1,13 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
-/**
- * SocialLinksButton Component
- * Inspired by Framer Social Links Button (https://framer.com/m/Social-Links-Button-bJAemC.js@7b7hjgo7lXcsSR4KVyCb)
- *
- * Interactive dropdown button that expands a floating menu of social links & contact channels
- */
-
 const SOCIAL_ITEMS = [
     {
         id: 'email',

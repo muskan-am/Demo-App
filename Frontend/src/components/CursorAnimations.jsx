@@ -23,12 +23,6 @@ function parseColor(color) {
     return fallback;
 }
 
-/**
- * CursorAnimations Component
- *
- * Renders high-visibility animated sparkle stars & magic comet dust trail.
- * Works seamlessly across Desktop, Tablet (iPad), and Mobile (iPhone/Android).
- */
 const CursorAnimations = ({
     trailStyle = 'comet',
     trailColor = '#818cf8',

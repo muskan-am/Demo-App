@@ -1,12 +1,6 @@
 import { useRef, useEffect } from 'react';
 
-/**
- * AnimatedLiquidBackground component
- * From Framer AnimatedLiquidBackground_Prod (https://framer.com/m/AnimatedLiquidBackground-Prod-vIhm.js@ghH1aHLmGZ0iE7qXDFVk)
- *
- * WebGL2 2D/3D Perlin noise and swirl distortion full body liquid background,
- * customized specifically to match the project's Indigo/Purple color theme.
- */
+
 
 const PatternShapes = { Checks: 0, Stripes: 1, Edge: 2 };
 

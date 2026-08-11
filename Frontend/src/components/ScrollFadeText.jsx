@@ -2,13 +2,6 @@ import { useRef, useState, useEffect } from 'react';
 import { motion, useScroll, useTransform, useSpring } from 'motion/react';
 import scatterCardImg from '../assets/scatter_card.png';
 
-/**
- * ScrollFadeText Component
- *
- * Elegant floating scatter card showcase with generous vertical spacing & smooth scroll fade.
- * Responsive across Desktop, Tablet (iPad), and Mobile (iPhone).
- */
-
 const SCATTER_CARDS_DATA = [
     {
         id: 1,

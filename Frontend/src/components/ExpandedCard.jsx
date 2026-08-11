@@ -1,13 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 
-/**
- * ExpandedCard (ServiceCarousel3D) Component
- * Inspired by Framer Service_section (https://framer.com/m/Service-section-a2j24v.js@aAfooHiaMhCLAPzZAS79)
- *
- * 3D rotating octagonal cylinder carousel presenting key project technical highlights.
- * Features full cover feature screenshot headers on every 3D card.
- */
 
 const PROJECT_CARDS = [
     {
