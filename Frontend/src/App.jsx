@@ -31,6 +31,7 @@ import Login          from './pages/Login';
 import Signup         from './pages/Signup';
 import Dashboard      from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import AnimatedLiquidBackground from './components/AnimatedLiquidBackground';
 
 // Page transition wrapper — fades in each route
 const PageTransition = ({ children }) => (
@@ -49,7 +50,24 @@ const App = () => {
     const location = useLocation();
 
     return (
-        <AnimatePresence mode="wait">
+        <>
+            {/* Framer WebGL Full Body Animated Liquid Background (Project Indigo/Purple Theme) */}
+            <AnimatedLiquidBackground 
+                color1="#0f0c29"
+                color2="#4f46e5"
+                color3="#7c3aed"
+                scale={0.55}
+                rotation={-0.5}
+                proportion={0.4}
+                distortion={0.3}
+                swirl={0.7}
+                swirlIterations={12}
+                softness={0.95}
+                speed={0.35}
+                opacity={0.9}
+            />
+
+            <AnimatePresence mode="wait">
             <Routes location={location} key={location.pathname}>
                 {/* ============================================================
                     PUBLIC ROUTES
@@ -101,6 +119,7 @@ const App = () => {
                 <Route path="*" element={<PageTransition><Home /></PageTransition>} />
             </Routes>
         </AnimatePresence>
+        </>
     );
 };
 

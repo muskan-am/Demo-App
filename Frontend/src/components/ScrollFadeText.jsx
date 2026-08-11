@@ -1,16 +1,12 @@
-// ============================================================
-// ScrollFadeText.jsx — Framer 3D Scroll Image Scatter Component
-// ============================================================
-// Features:
-//   - 8 High-definition UI showcase image cards that scatter 360° outward on scroll
-//   - Center headline "Engineered for Perfection" positioned below floating Navbar
-//   - Glassmorphism image frames with drop shadows & badge labels
-//   - Complete fade-out to 0 opacity before Video Reveal section
-// ============================================================
-
-import React, { useRef } from 'react';
+import { useRef } from 'react';
 import { motion, useScroll, useTransform, useSpring } from 'motion/react';
 import scatterCardImg from '../assets/scatter_card.png';
+
+/**
+ * ScrollFadeText Component
+ *
+ * Floating scattering card showcase with scroll-driven expansion & upward off-screen exit animation.
+ */
 
 const SCATTER_CARDS = [
     {
@@ -18,64 +14,64 @@ const SCATTER_CARDS = [
         title: 'Bcrypt Passwords',
         icon: '🔒',
         image: scatterCardImg,
-        start: { x: -320, y: -140, scale: 0.85, rotate: -6 },
-        end:   { x: -540, y: -270, scale: 0.55, rotate: -15 }
+        start: { x: -300, y: -120, scale: 0.85, rotate: -6 },
+        end:   { x: -520, y: -290, scale: 0.55, rotate: -15 }
     },
     {
         id: 2,
         title: 'JWT Auth Tokens',
         icon: '🪙',
         image: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=600&q=80',
-        start: { x: 320, y: -140, scale: 0.85, rotate: 6 },
-        end:   { x: 540, y: -270, scale: 0.55, rotate: 15 }
+        start: { x: 300, y: -120, scale: 0.85, rotate: 6 },
+        end:   { x: 520, y: -290, scale: 0.55, rotate: 15 }
     },
     {
         id: 3,
         title: 'RBAC Control',
         icon: '🛡️',
         image: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=600&q=80',
-        start: { x: -390, y: 10,  scale: 0.8, rotate: -4 },
-        end:   { x: -620, y: 10,  scale: 0.5, rotate: -10 }
+        start: { x: -370, y: 10,  scale: 0.8, rotate: -4 },
+        end:   { x: -600, y: -60, scale: 0.5, rotate: -10 }
     },
     {
         id: 4,
         title: 'High Speed Vite',
         icon: '⚡',
         image: 'https://images.unsplash.com/photo-1508739773434-c26b3d09e071?auto=format&fit=crop&w=600&q=80',
-        start: { x: 390, y: 10,  scale: 0.8, rotate: 4 },
-        end:   { x: 620, y: 10,  scale: 0.5, rotate: 10 }
+        start: { x: 370, y: 10,  scale: 0.8, rotate: 4 },
+        end:   { x: 600, y: -60, scale: 0.5, rotate: 10 }
     },
     {
         id: 5,
         title: 'Glassmorphism UX',
         icon: '🎨',
         image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80',
-        start: { x: -300, y: 150, scale: 0.85, rotate: -5 },
-        end:   { x: -500, y: 270, scale: 0.55, rotate: -12 }
+        start: { x: -280, y: 140, scale: 0.85, rotate: -5 },
+        end:   { x: -480, y: 160, scale: 0.55, rotate: -12 }
     },
     {
         id: 6,
         title: 'RESTful API',
         icon: '🌐',
         image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80',
-        start: { x: 300, y: 150, scale: 0.85, rotate: 5 },
-        end:   { x: 500, y: 270, scale: 0.55, rotate: 12 }
+        start: { x: 280, y: 140, scale: 0.85, rotate: 5 },
+        end:   { x: 480, y: 160, scale: 0.55, rotate: 12 }
     },
     {
         id: 7,
         title: 'Admin Control',
         icon: '⚙️',
         image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80',
-        start: { x: 0, y: -190, scale: 0.9, rotate: -2 },
-        end:   { x: 0, y: -330, scale: 0.6, rotate: -6 }
+        start: { x: 0, y: -180, scale: 0.9, rotate: -2 },
+        end:   { x: 0, y: -350, scale: 0.6, rotate: -6 }
     },
     {
         id: 8,
         title: 'Framer Motion',
         icon: '✨',
         image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=600&q=80',
-        start: { x: 0, y: 190,  scale: 0.9, rotate: 2 },
-        end:   { x: 0, y: 330,  scale: 0.6, rotate: 6 }
+        start: { x: 0, y: 180,  scale: 0.9, rotate: 2 },
+        end:   { x: 0, y: 280,  scale: 0.6, rotate: 6 }
     }
 ];
 
@@ -87,8 +83,13 @@ const ScrollFadeText = () => {
         offset: ['start start', 'end start']
     });
 
-    const rawTitleOpacity = useTransform(scrollYProgress, [0, 0.2, 0.55, 0.82], [0.8, 1, 1, 0]);
-    const rawTitleScale   = useTransform(scrollYProgress, [0, 0.5, 0.82], [1, 1, 0.92]);
+    // Entire section content upward exit translation & opacity fade
+    const containerY       = useTransform(scrollYProgress, [0.55, 0.92], [0, -280]);
+    const containerOpacity = useTransform(scrollYProgress, [0.6, 0.92], [1, 0]);
+
+    // Title entrance & exit scaling
+    const rawTitleOpacity = useTransform(scrollYProgress, [0, 0.2, 0.6, 0.88], [0.8, 1, 1, 0]);
+    const rawTitleScale   = useTransform(scrollYProgress, [0, 0.5, 0.88], [1, 1, 0.88]);
     const titleOpacity = useSpring(rawTitleOpacity, { stiffness: 120, damping: 25 });
     const titleScale   = useSpring(rawTitleScale,   { stiffness: 120, damping: 25 });
 
@@ -99,20 +100,22 @@ const ScrollFadeText = () => {
             style={{
                 position: 'relative',
                 width: '100%',
-                height: '110vh',
+                height: '140vh',
                 zIndex: 2,
                 margin: 0
             }}
         >
-            <div
+            <motion.div
                 style={{
                     position: 'sticky',
-                    top: '120px',
-                    height: 'calc(100vh - 160px)',
+                    top: '90px',
+                    height: 'calc(100vh - 120px)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    overflow: 'hidden'
+                    overflow: 'hidden',
+                    y: containerY,
+                    opacity: containerOpacity
                 }}
             >
                 {/* Center Headline */}
@@ -144,7 +147,7 @@ const ScrollFadeText = () => {
                     const y       = useTransform(scrollYProgress, [0.05, 0.75], [card.start.y, card.end.y]);
                     const scale   = useTransform(scrollYProgress, [0.05, 0.75], [card.start.scale, card.end.scale]);
                     const rotate  = useTransform(scrollYProgress, [0.05, 0.75], [card.start.rotate, card.end.rotate]);
-                    const opacity = useTransform(scrollYProgress, [0.05, 0.25, 0.6, 0.82], [0.7, 1, 1, 0]);
+                    const opacity = useTransform(scrollYProgress, [0.05, 0.25, 0.55, 0.85], [0.7, 1, 1, 0]);
 
                     return (
                         <motion.div
@@ -216,7 +219,7 @@ const ScrollFadeText = () => {
                         </motion.div>
                     );
                 })}
-            </div>
+            </motion.div>
         </section>
     );
 };

@@ -1,13 +1,3 @@
-// ============================================================
-// StatsCounter.jsx — Framer Animated Stats Counter Component
-// ============================================================
-// Features:
-//   - Smooth easing number counting (requestAnimationFrame)
-//   - Glassmorphism cards with glowing gradient numbers & trends
-//   - Interactive hover lift & glow animation
-//   - Fully responsive 4-column layout
-// ============================================================
-
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useInView } from 'motion/react';
 

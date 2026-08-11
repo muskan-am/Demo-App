@@ -1,14 +1,3 @@
-// ============================================================
-// Starsfield.jsx — Framer Ambient Particle Starfield Component
-// ============================================================
-// Features:
-//   - HTML5 Canvas high-performance 2D/3D perspective starfield
-//   - Dual Light & Dark theme vibrant color palettes
-//   - Radial gradient outer glow halos + bright core star particles
-//   - Continuous animation loop with ResizeObserver container tracking
-//   - Global pointer move cursor drift tracking
-// ============================================================
-
 import React, { useEffect, useRef, useCallback } from 'react';
 
 const Z_NEAR = 0.12;

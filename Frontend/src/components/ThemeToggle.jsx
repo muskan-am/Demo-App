@@ -1,6 +1,4 @@
-// ============================================================
-// ThemeToggle.jsx — Uiverse.io Dark/Light Mode Switch Button
-// ============================================================
+
 import { useState, useEffect } from 'react';
 
 const ThemeToggle = () => {

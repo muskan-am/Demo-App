@@ -1,13 +1,4 @@
-// ============================================================
-// ScrollZoomReveal.jsx — Framer 3D Scroll Video Zoom Component
-// ============================================================
-// Features:
-//   - Tight scroll-driven 3D spring zoom (starts small ~20vw, expands to 92vw on scroll)
-//   - Zero dead vertical whitespace gaps (compact 85vh section height)
-//   - Plays src/assets/video.mp4 inline (autoplay, loop, muted, playsInline)
-//   - Responsive left & right typography ("OUR" / "PASSION")
-//   - Smooth Spring physics using Motion (useScroll, useTransform, useSpring)
-// ============================================================
+
 
 import React, { useRef, useState, useEffect } from 'react';
 import { motion, useScroll, useTransform, useSpring } from 'motion/react';

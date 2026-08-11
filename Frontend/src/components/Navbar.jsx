@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import useAuth from '../hooks/useAuth';
 import { logout } from '../services/authService';
 import ThemeToggle from './ThemeToggle';
+import SocialLinksButton from './SocialLinksButton';
 
 const navbarVariants = {
     hidden: { opacity: 0, y: -20 },
@@ -82,24 +83,26 @@ const Navbar = () => {
         >
             {/* Framer Nova Glow Outer Wrap */}
             <div className="navbar__border-glow-wrap">
-                {/* 360° Rotating Outer Conic Gradient Rotor */}
-                <motion.div
-                    className="navbar__border-rotor"
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
-                />
+                {/* 360° Rotating Outer Conic Gradient Rotor Clip */}
+                <div className="navbar__border-rotor-clip">
+                    <motion.div
+                        className="navbar__border-rotor"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
+                    />
+                </div>
 
                 {/* Glass Pill Main Container */}
                 <div className="navbar__glass-pill">
-                    {/* Top Hairline Glow */}
-                    <div className="navbar__top-hairline" />
-
-                    {/* Shimmer Streak */}
-                    <motion.div
-                        className="navbar__shimmer-streak"
-                        animate={{ x: ['-100%', '1000%'] }}
-                        transition={{ duration: 4, repeat: Infinity, repeatDelay: 2, ease: 'easeInOut' }}
-                    />
+                    {/* Clipped background shimmer layer */}
+                    <div className="navbar__glass-bg-clip">
+                        <div className="navbar__top-hairline" />
+                        <motion.div
+                            className="navbar__shimmer-streak"
+                            animate={{ x: ['-100%', '1000%'] }}
+                            transition={{ duration: 4, repeat: Infinity, repeatDelay: 2, ease: 'easeInOut' }}
+                        />
+                    </div>
 
                     <div className="navbar__inner">
                         {/* ---- Nova Orbit Logo Mark ---- */}
@@ -141,7 +144,7 @@ const Navbar = () => {
                             </li>
                         </ul>
 
-                        {/* ---- Auth Actions & Theme Switch ---- */}
+                        {/* ---- Auth Actions & Theme Switch & Social Links ---- */}
                         <div className="navbar__actions">
                             <ThemeToggle />
 
@@ -177,6 +180,8 @@ const Navbar = () => {
                                     </motion.div>
                                 </>
                             )}
+
+                            <SocialLinksButton buttonText="Get in touch" />
                         </div>
 
                         {/* ---- Hamburger for Mobile ---- */}
