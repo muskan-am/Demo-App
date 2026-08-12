@@ -199,6 +199,72 @@ body.light-theme .contact-card__icon {
     color: #4f46e5;
 }
 
+/* Light Theme Auth Card & Form Overrides */
+body.light-theme .auth-card {
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(203, 213, 225, 0.85);
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+}
+
+body.light-theme .auth-title {
+    color: #0f172a;
+}
+
+body.light-theme .auth-subtitle {
+    color: #475569;
+}
+
+body.light-theme .form-label {
+    color: #334155;
+    font-weight: 600;
+}
+
+body.light-theme .form-input {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    color: #0f172a;
+}
+
+body.light-theme .form-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+body.light-theme .form-input::placeholder {
+    color: #94a3b8;
+}
+
+body.light-theme .toggle-password {
+    color: #64748b;
+}
+
+body.light-theme .auth-divider {
+    color: #64748b;
+}
+
+body.light-theme .auth-divider::before,
+body.light-theme .auth-divider::after {
+    border-bottom-color: #cbd5e1;
+}
+
+body.light-theme .google-custom-btn {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #0f172a;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme .google-custom-btn:hover {
+    background: #f8fafc;
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+body.light-theme .auth-footer {
+    color: #475569;
+}
+
+
 /* Light Theme Footer */
 body.light-theme .footer {
     background: #e2e8f0;
@@ -468,6 +534,74 @@ a {
     text-decoration: underline;
 }
 
+/* Divider for Google Sign-In */
+.auth-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 1.25rem 0 1rem 0;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.auth-divider span {
+    padding: 0 0.85rem;
+}
+
+/* Google Auth Wrapper & Container */
+.google-auth-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-top: 0.25rem;
+}
+
+.google-btn-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    min-height: 44px;
+}
+
+.google-btn-container iframe {
+    margin: 0 auto !important;
+    border-radius: 8px !important;
+}
+
+.google-custom-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 11px 16px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: var(--radius-md, 8px);
+    color: #ffffff;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.google-custom-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.35);
+}
+
+
 
 /* ============================================================
    5. FORM ELEMENTS
@@ -484,12 +618,185 @@ a {
     gap: var(--space-xs);
 }
 
+.form-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.forgot-password-link {
+    font-size: 0.8125rem;
+    color: var(--primary-light);
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.forgot-password-link:hover {
+    color: var(--primary);
+    text-decoration: underline;
+}
+
+body.light-theme .forgot-password-link {
+    color: #4f46e5;
+    font-weight: 600;
+}
+
+body.light-theme .forgot-password-link:hover {
+    color: #4338ca;
+}
+
+/* ============================================================
+   OTP METHOD SWITCHER TABS & 6-DIGIT BOX STYLES
+   ============================================================ */
+.otp-method-tabs {
+    display: flex;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 5px;
+    border-radius: 14px;
+    border: 1px solid var(--input-border);
+    margin-bottom: 8px;
+}
+
+body.light-theme .otp-method-tabs {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.otp-tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.otp-tab-btn.active {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+}
+
+body.light-theme .otp-tab-btn.active {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
+}
+
+.otp-target-badge {
+    text-align: center;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    color: var(--text-primary);
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-size: 0.875rem;
+}
+
+body.light-theme .otp-target-badge {
+    background: #eef2ff;
+    border-color: #c7d2fe;
+    color: #1e1b4b;
+}
+
+/* 6-Digit OTP Box Grid */
+.otp-boxes-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 12px 0 6px 0;
+}
+
+.otp-box-input {
+    width: 48px;
+    height: 56px;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-family: monospace, var(--font);
+    border-radius: 12px;
+    background: var(--input-bg);
+    border: 1.5px solid var(--input-border);
+    color: var(--input-text);
+    outline: none;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+body.light-theme .otp-box-input {
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    color: #0f172a;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.otp-box-input:focus {
+    border-color: #6366f1;
+    transform: translateY(-3px) scale(1.04);
+    box-shadow: 0 8px 20px -4px rgba(99, 102, 241, 0.35);
+}
+
+/* OTP Resend Row */
+.otp-resend-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.8125rem;
+    margin-top: 8px;
+}
+
+.otp-timer-text {
+    color: var(--text-muted);
+}
+
+body.light-theme .otp-timer-text {
+    color: #64748b;
+}
+
+.otp-resend-btn {
+    background: none;
+    border: none;
+    color: #6366f1;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+}
+
+.otp-resend-btn:hover {
+    text-decoration: underline;
+}
+
+.otp-change-target-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    padding: 0;
+}
+
+.otp-change-target-btn:hover {
+    color: var(--text-primary);
+    text-decoration: underline;
+}
+
+
 .form-label {
     font-size: 0.875rem;
     font-weight: 500;
     color: var(--text-secondary);
     letter-spacing: 0.3px;
 }
+
 
 .form-input {
     width: 100%;

@@ -29,6 +29,8 @@ import RoleProtectedRoute from './components/RoleProtectedRoute';
 import Home           from './pages/Home';
 import Login          from './pages/Login';
 import Signup         from './pages/Signup';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword  from './pages/ResetPassword';
 import Dashboard      from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import AnimatedLiquidBackground from './components/AnimatedLiquidBackground';
@@ -81,6 +83,13 @@ const App = () => {
 
                 {/* Signup Page */}
                 <Route path="/signup" element={<PageTransition><Signup /></PageTransition>} />
+
+                {/* Forgot Password Page */}
+                <Route path="/forgot-password" element={<PageTransition><ForgotPassword /></PageTransition>} />
+
+                {/* Reset Password Page */}
+                <Route path="/reset-password/:token" element={<PageTransition><ResetPassword /></PageTransition>} />
+
 
                 {/* ============================================================
                     PROTECTED ROUTES

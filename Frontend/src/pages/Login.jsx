@@ -15,10 +15,10 @@
 // All state is managed through AuthContext.loginUser().
 // ============================================================
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { login } from '../services/authService';
+import { login, googleLogin } from '../services/authService';
 import useAuth from '../hooks/useAuth';
 
 // ---- Reusable variants ----
@@ -46,17 +46,10 @@ const alertVariants = {
 const Login = () => {
     const navigate = useNavigate();
     const { loginUser, isAuthenticated, user, loading } = useAuth();
+    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
     // ============================================================
     // REDIRECT IF ALREADY AUTHENTICATED
-    // If user visits / while already logged in,
-    // send them to their appropriate dashboard immediately.
-    // We wait for loading=false first — this ensures AuthContext
-    // has finished restoring the session from localStorage before
-    // we decide whether to redirect. Without this guard, a
-    // logged-in user who refreshes on / would stay on the login
-    // page because isAuthenticated is briefly false while the
-    // session is being restored.
     // ============================================================
     useEffect(() => {
         if (!loading && isAuthenticated && user) {
@@ -70,7 +63,6 @@ const Login = () => {
 
     // ============================================================
     // FORM STATE
-    // Controlled components — React owns each input value.
     // ============================================================
     const [formData, setFormData] = useState({
         email: '',
@@ -80,13 +72,12 @@ const Login = () => {
     // ============================================================
     // UI STATE
     // ============================================================
-    const [showPassword, setShowPassword] = useState(false); // toggle password visibility
-    const [submitting, setSubmitting]     = useState(false);  // true while API request is in progress
-    const [error, setError]               = useState('');     // global error banner message
+    const [showPassword, setShowPassword] = useState(false);
+    const [submitting, setSubmitting]     = useState(false);
+    const [error, setError]               = useState('');
 
     // ============================================================
     // FIELD ERRORS STATE
-    // Per-field validation messages shown below each input.
     // ============================================================
     const [fieldErrors, setFieldErrors] = useState({
         email: '',
@@ -94,44 +85,111 @@ const Login = () => {
     });
 
     // ============================================================
+    // GOOGLE AUTH CALLBACK
+    // ============================================================
+    const handleGoogleResponse = useCallback(async (response) => {
+        if (!response || !response.credential) {
+            setError('Google sign-in was cancelled or failed.');
+            return;
+        }
+
+        setSubmitting(true);
+        setError('');
+
+        try {
+            const apiRes = await googleLogin(response.credential);
+            const { token, user: loggedInUser } = apiRes.data;
+
+            // Store credentials in AuthContext
+            loginUser(token, loggedInUser);
+
+            // Role-based redirect
+            if (loggedInUser.role === 'admin') {
+                navigate('/admin', { replace: true });
+            } else {
+                navigate('/dashboard', { replace: true });
+            }
+        } catch (err) {
+            console.error('[GOOGLE SIGN-IN ERROR]', err);
+            const message =
+                err.response?.data?.message ||
+                err.message ||
+                'Google Sign-In failed. Please try again.';
+
+            setError(message);
+        } finally {
+            setSubmitting(false);
+        }
+    }, [loginUser, navigate]);
+
+    // ============================================================
+    // INITIALIZE GOOGLE IDENTITY SERVICES
+    // ============================================================
+    useEffect(() => {
+        if (!googleClientId || googleClientId === 'YOUR_GOOGLE_CLIENT_ID') {
+            return;
+        }
+
+        const initGoogle = () => {
+            if (window.google?.accounts?.id) {
+                try {
+                    window.google.accounts.id.initialize({
+                        client_id: googleClientId,
+                        callback: handleGoogleResponse,
+                        auto_select: false,
+                        cancel_on_tap_outside: true
+                    });
+
+                    const btnDiv = document.getElementById('googleSignInDiv');
+                    if (btnDiv) {
+                        btnDiv.innerHTML = '';
+                        window.google.accounts.id.renderButton(btnDiv, {
+                            theme: 'outline',
+                            size: 'large',
+                            width: '380',
+                            text: 'continue_with',
+                            shape: 'rectangular',
+                            logo_alignment: 'left'
+                        });
+                    }
+
+
+                } catch (err) {
+                    console.error('Google Sign-In render error:', err);
+                }
+            }
+        };
+
+        if (window.google?.accounts?.id) {
+            initGoogle();
+        } else {
+            const timer = setInterval(() => {
+                if (window.google?.accounts?.id) {
+                    initGoogle();
+                    clearInterval(timer);
+                }
+            }, 300);
+            return () => clearInterval(timer);
+        }
+    }, [googleClientId, handleGoogleResponse]);
+
+    // ============================================================
     // handleChange(e)
-    // Updates the field value in formData on every keystroke.
-    // Also clears the field-level validation error and global
-    // error banner so feedback disappears as user corrects.
     // ============================================================
     const handleChange = (e) => {
         const { name, value } = e.target;
-
-        // Update the specific field value
         setFormData((prev) => ({ ...prev, [name]: value }));
-
-        // Clear the inline validation error for this field
         setFieldErrors((prev) => ({ ...prev, [name]: '' }));
-
-        // Clear the global error banner — user is correcting
         setError('');
     };
 
     // ============================================================
     // validate()
-    // Runs client-side validation before allowing the API call.
-    // Returns true if all fields pass, false otherwise.
-    // Populates fieldErrors with per-field error messages.
-    //
-    // Rules:
-    // - email: required + valid format
-    // - password: required only (server enforces min length)
-    //
-    // Why not validate password length here?
-    // Login should allow any input — the backend decides if the
-    // credentials are correct. We don't want to help attackers
-    // guess that a stored password is "at least 8 chars".
     // ============================================================
     const validate = () => {
         const errors = {};
         let isValid = true;
 
-        // Email: required + format check
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!formData.email.trim()) {
             errors.email = 'Email is required';
@@ -141,7 +199,6 @@ const Login = () => {
             isValid = false;
         }
 
-        // Password: required only
         if (!formData.password) {
             errors.password = 'Password is required';
             isValid = false;
@@ -153,31 +210,10 @@ const Login = () => {
 
     // ============================================================
     // handleSubmit(e)
-    // Main form submission handler.
-    //
-    // Process:
-    // 1. Prevent default form submission (page reload)
-    // 2. Run client-side validation — abort if invalid
-    // 3. Set loading=true (disables button, shows spinner)
-    // 4. Call authService.login(email, password)
-    // 5. On success:
-    //    a. Extract token + user from response
-    //    b. Call loginUser(token, user) — AuthContext handles storage
-    //    c. Redirect based on user.role (no hardcoding)
-    // 6. On failure:
-    //    a. Extract backend error message
-    //    b. Display in global error banner
-    // 7. finally: always reset loading=false
-    //
-    // IMPORTANT: localStorage is NEVER touched here.
-    // loginUser() in AuthContext handles all persistence.
-    // The role-based redirect reads from the API response,
-    // not from any hardcoded value.
     // ============================================================
     const handleSubmit = async (e) => {
-        e.preventDefault(); // stop browser from reloading page
+        e.preventDefault();
 
-        // Run client-side validation — stop if any field is invalid
         if (!validate()) return;
 
         setSubmitting(true);
@@ -224,7 +260,7 @@ const Login = () => {
                     <p className="auth-subtitle">Sign in to your account</p>
                 </div>
 
-                {/* ---- Global Error Banner — AnimatePresence for smooth mount/unmount ---- */}
+                {/* ---- Global Error Banner ---- */}
                 <AnimatePresence>
                     {error && (
                         <motion.div
@@ -240,7 +276,7 @@ const Login = () => {
                     )}
                 </AnimatePresence>
 
-                {/* ---- Login Form — staggered fields ---- */}
+                {/* ---- Login Form ---- */}
                 <motion.form
                     onSubmit={handleSubmit}
                     noValidate
@@ -273,10 +309,16 @@ const Login = () => {
 
                     {/* ---- Password Field ---- */}
                     <motion.div className="form-group" variants={fieldVariants}>
-                        <label htmlFor="password" className="form-label">
-                            Password
-                        </label>
+                        <div className="form-label-row">
+                            <label htmlFor="password" className="form-label">
+                                Password
+                            </label>
+                            <Link to="/forgot-password" className="forgot-password-link">
+                                Forgot Password?
+                            </Link>
+                        </div>
                         <div className="input-wrapper">
+
                             <input
                                 id="password"
                                 type={showPassword ? 'text' : 'password'}
@@ -325,6 +367,31 @@ const Login = () => {
 
                 </motion.form>
 
+                {/* ---- OR Divider ---- */}
+                <div className="auth-divider">
+                    <span>OR</span>
+                </div>
+
+                {/* ---- Continue with Google Button ---- */}
+                <div className="google-auth-wrapper">
+                    <div id="googleSignInDiv" className="google-btn-container"></div>
+                    {(!googleClientId || googleClientId === 'YOUR_GOOGLE_CLIENT_ID') && (
+                        <button
+                            type="button"
+                            className="google-custom-btn"
+                            onClick={() => setError('Google Client ID is missing. Please set VITE_GOOGLE_CLIENT_ID in Frontend/.env')}
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                            </svg>
+                            Continue with Google
+                        </button>
+                    )}
+                </div>
+
                 {/* ---- Footer Link ---- */}
                 <p className="auth-footer">
                     Don&apos;t have an account?{' '}
@@ -339,3 +406,4 @@ const Login = () => {
 };
 
 export default Login;
+

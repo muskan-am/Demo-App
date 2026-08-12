@@ -10,10 +10,11 @@
 // User must explicitly login after registration.
 // ============================================================
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { signup } from '../services/authService';
+import { signup, googleLogin } from '../services/authService';
+import useAuth from '../hooks/useAuth';
 
 // ---- Reusable variants ----
 const cardVariants = {
@@ -39,30 +40,32 @@ const alertVariants = {
 
 const Signup = () => {
     const navigate = useNavigate();
+    const { loginUser } = useAuth();
+    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
     // ============================================================
     // FORM STATE
-    // Each field is a controlled component — React owns the value.
     // ============================================================
     const [formData, setFormData] = useState({
         name: '',
         email: '',
+        phone: '',
         password: '',
         confirmPassword: ''
     });
 
+
     // ============================================================
     // UI STATE
     // ============================================================
-    const [showPassword, setShowPassword]               = useState(false); // toggle password visibility
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false); // toggle confirm password visibility
-    const [loading, setLoading]                         = useState(false);  // true while API request is in progress
-    const [error, setError]                             = useState('');     // backend or validation error message
-    const [success, setSuccess]                         = useState('');     // success confirmation message
+    const [showPassword, setShowPassword]               = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [loading, setLoading]                         = useState(false);
+    const [error, setError]                             = useState('');
+    const [success, setSuccess]                         = useState('');
 
     // ============================================================
     // VALIDATION ERRORS STATE
-    // Per-field validation messages shown below each input.
     // ============================================================
     const [fieldErrors, setFieldErrors] = useState({
         name: '',
@@ -72,41 +75,111 @@ const Signup = () => {
     });
 
     // ============================================================
+    // GOOGLE AUTH CALLBACK
+    // ============================================================
+    const handleGoogleResponse = useCallback(async (response) => {
+        if (!response || !response.credential) {
+            setError('Google authentication was cancelled or failed.');
+            return;
+        }
+
+        setLoading(true);
+        setError('');
+        setSuccess('');
+
+        try {
+            const apiRes = await googleLogin(response.credential);
+            const { token, user: loggedInUser } = apiRes.data;
+
+            // Store credentials in AuthContext
+            loginUser(token, loggedInUser);
+
+            // Role-based redirect
+            if (loggedInUser.role === 'admin') {
+                navigate('/admin', { replace: true });
+            } else {
+                navigate('/dashboard', { replace: true });
+            }
+        } catch (err) {
+            console.error('[GOOGLE SIGN-UP ERROR]', err);
+            const message =
+                err.response?.data?.message ||
+                err.message ||
+                'Google Authentication failed. Please try again.';
+
+            setError(message);
+        } finally {
+            setLoading(false);
+        }
+    }, [loginUser, navigate]);
+
+    // ============================================================
+    // INITIALIZE GOOGLE IDENTITY SERVICES
+    // ============================================================
+    useEffect(() => {
+        if (!googleClientId || googleClientId === 'YOUR_GOOGLE_CLIENT_ID') {
+            return;
+        }
+
+        const initGoogle = () => {
+            if (window.google?.accounts?.id) {
+                try {
+                    window.google.accounts.id.initialize({
+                        client_id: googleClientId,
+                        callback: handleGoogleResponse,
+                        auto_select: false,
+                        cancel_on_tap_outside: true
+                    });
+
+                    const btnDiv = document.getElementById('googleSignUpDiv');
+                    if (btnDiv) {
+                        btnDiv.innerHTML = '';
+                        window.google.accounts.id.renderButton(btnDiv, {
+                            theme: 'outline',
+                            size: 'large',
+                            width: '380',
+                            text: 'continue_with',
+                            shape: 'rectangular',
+                            logo_alignment: 'left'
+                        });
+                    }
+
+                } catch (err) {
+                    console.error('Google Sign-Up render error:', err);
+                }
+            }
+        };
+
+        if (window.google?.accounts?.id) {
+            initGoogle();
+        } else {
+            const timer = setInterval(() => {
+                if (window.google?.accounts?.id) {
+                    initGoogle();
+                    clearInterval(timer);
+                }
+            }, 300);
+            return () => clearInterval(timer);
+        }
+    }, [googleClientId, handleGoogleResponse]);
+
+    // ============================================================
     // handleChange(e)
-    // Updates formData whenever user types in any field.
-    // Also clears the field-specific validation error on change
-    // so the red message disappears once user starts correcting.
     // ============================================================
     const handleChange = (e) => {
         const { name, value } = e.target;
-
-        // Update field value
         setFormData((prev) => ({ ...prev, [name]: value }));
-
-        // Clear validation error for this field as user types
         setFieldErrors((prev) => ({ ...prev, [name]: '' }));
-
-        // Clear global error banner when user makes any change
         setError('');
     };
 
     // ============================================================
     // validate()
-    // Runs all client-side validation rules before API call.
-    // Returns true if all fields are valid, false otherwise.
-    // Populates fieldErrors with descriptive messages.
-    //
-    // Rules:
-    // - name: required, min 3 characters
-    // - email: required, valid email format
-    // - password: required, min 8 characters
-    // - confirmPassword: required, must match password
     // ============================================================
     const validate = () => {
         const errors = {};
         let isValid = true;
 
-        // Name validation
         if (!formData.name.trim()) {
             errors.name = 'Name is required';
             isValid = false;
@@ -115,7 +188,6 @@ const Signup = () => {
             isValid = false;
         }
 
-        // Email format validation using regex
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!formData.email.trim()) {
             errors.email = 'Email is required';
@@ -125,7 +197,6 @@ const Signup = () => {
             isValid = false;
         }
 
-        // Password length validation
         if (!formData.password) {
             errors.password = 'Password is required';
             isValid = false;
@@ -134,7 +205,6 @@ const Signup = () => {
             isValid = false;
         }
 
-        // Confirm password match validation
         if (!formData.confirmPassword) {
             errors.confirmPassword = 'Please confirm your password';
             isValid = false;
@@ -149,25 +219,10 @@ const Signup = () => {
 
     // ============================================================
     // handleSubmit(e)
-    // Main form submission handler.
-    //
-    // Process:
-    // 1. Prevent default form submission (page reload)
-    // 2. Run client-side validation — stop if invalid
-    // 3. Set loading=true — disables button, shows spinner
-    // 4. Call authService.signup() with form data
-    // 5. On success: show success message, redirect to / after 2s
-    // 6. On failure: extract backend error and show it
-    // 7. Always reset loading=false when done
-    //
-    // Why setLoading(false) in finally?
-    // Guarantees button is always re-enabled even if an
-    // unexpected error occurs — prevents permanently stuck UI.
     // ============================================================
     const handleSubmit = async (e) => {
-        e.preventDefault(); // prevent browser from reloading the page
+        e.preventDefault();
 
-        // Run client-side validation before hitting the API
         if (!validate()) return;
 
         setLoading(true);
@@ -175,23 +230,16 @@ const Signup = () => {
         setSuccess('');
 
         try {
-            // Call the signup API
-            // confirmPassword is NOT sent to backend — only backend fields
-            await signup(formData.name, formData.email, formData.password);
+            await signup(formData.name, formData.email, formData.password, formData.phone);
 
-            // Show success message to user
             setSuccess('Account created successfully! Redirecting to Login...');
 
-            // Redirect to Login page after 2 seconds
-            // User must log in manually — no auto-login on signup
+
             setTimeout(() => {
                 navigate('/login');
             }, 2000);
 
         } catch (err) {
-            // Extract error message from Axios error response
-            // err.response.data.message → backend's JSON error message
-            // err.message → fallback for network errors
             const message =
                 err.response?.data?.message ||
                 err.message ||
@@ -199,7 +247,6 @@ const Signup = () => {
 
             setError(message);
         } finally {
-            // Always re-enable the button — success or failure
             setLoading(false);
         }
     };
@@ -222,7 +269,7 @@ const Signup = () => {
                     <p className="auth-subtitle">Sign up to get started</p>
                 </div>
 
-                {/* ---- Alerts — AnimatePresence for smooth mount/unmount ---- */}
+                {/* ---- Alerts ---- */}
                 <AnimatePresence>
                     {success && (
                         <motion.div
@@ -252,7 +299,7 @@ const Signup = () => {
                     )}
                 </AnimatePresence>
 
-                {/* ---- Signup Form — staggered fields ---- */}
+                {/* ---- Signup Form ---- */}
                 <motion.form
                     onSubmit={handleSubmit}
                     noValidate
@@ -303,6 +350,25 @@ const Signup = () => {
                             <span className="field-error">{fieldErrors.email}</span>
                         )}
                     </motion.div>
+
+                    {/* ---- Phone Number Field ---- */}
+                    <motion.div className="form-group" variants={fieldVariants}>
+                        <label htmlFor="phone" className="form-label">
+                            Phone Number <span style={{ opacity: 0.65, fontWeight: 400 }}>(Optional)</span>
+                        </label>
+                        <input
+                            id="phone"
+                            type="tel"
+                            name="phone"
+                            value={formData.phone}
+                            onChange={handleChange}
+                            placeholder="+1 234 567 8900"
+                            className="form-input"
+                            disabled={loading}
+                            autoComplete="tel"
+                        />
+                    </motion.div>
+
 
                     {/* ---- Password Field ---- */}
                     <motion.div className="form-group" variants={fieldVariants}>
@@ -390,6 +456,31 @@ const Signup = () => {
 
                 </motion.form>
 
+                {/* ---- OR Divider ---- */}
+                <div className="auth-divider">
+                    <span>OR</span>
+                </div>
+
+                {/* ---- Continue with Google Button ---- */}
+                <div className="google-auth-wrapper">
+                    <div id="googleSignUpDiv" className="google-btn-container"></div>
+                    {(!googleClientId || googleClientId === 'YOUR_GOOGLE_CLIENT_ID') && (
+                        <button
+                            type="button"
+                            className="google-custom-btn"
+                            onClick={() => setError('Google Client ID is missing. Please set VITE_GOOGLE_CLIENT_ID in Frontend/.env')}
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                            </svg>
+                            Continue with Google
+                        </button>
+                    )}
+                </div>
+
                 {/* ---- Footer Link ---- */}
                 <p className="auth-footer">
                     Already have an account?{' '}
@@ -404,3 +495,4 @@ const Signup = () => {
 };
 
 export default Signup;
+

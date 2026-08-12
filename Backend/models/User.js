@@ -57,10 +57,68 @@ const userSchema = new mongoose.Schema(
         // ========================================
         password: {
             type: String,
-            required: [true, 'Password is required'],
+            required: [
+                function() {
+                    return this.authProvider === 'local' && !this.googleId;
+                },
+                'Password is required'
+            ],
             minlength: [8, 'Password must be at least 8 characters long'],
             select: false                         // Never return password in queries
         },
+
+        // ========================================
+        // GOOGLE AUTH FIELDS
+        // Optional fields used when signing in via Google
+        // ========================================
+        googleId: {
+            type: String,
+            unique: true,
+            sparse: true                          // Allows multiple docs to omit googleId
+        },
+
+        profilePicture: {
+            type: String,
+            trim: true
+        },
+
+        phone: {
+            type: String,
+            trim: true,
+            default: null
+        },
+
+        authProvider: {
+            type: String,
+            enum: ['local', 'google'],
+            default: 'local'
+        },
+
+        // ========================================
+        // PASSWORD RESET & OTP FIELDS
+        // SHA-256 hashed token/OTP & expiration timestamps
+        // ========================================
+        resetPasswordToken: {
+            type: String,
+            default: null
+        },
+
+        resetPasswordExpire: {
+            type: Date,
+            default: null
+        },
+
+        resetOtp: {
+            type: String,
+            default: null
+        },
+
+        resetOtpExpire: {
+            type: Date,
+            default: null
+        },
+
+
 
         // ========================================
         // ROLE
@@ -105,18 +163,15 @@ const userSchema = new mongoose.Schema(
 // 1. User is being created (new signup)
 // 2. Password field is being modified (password reset)
 //
-// Does NOT hash if password wasn't changed (e.g., updating name/email).
-// This prevents double-hashing the already-hashed password.
-//
-// bcrypt.genSalt(10) → generates a random salt with 10 rounds
-// bcrypt.hash(password, salt) → creates hash from password + salt
+// Does NOT hash if password wasn't provided or modified (e.g., Google login).
+// This prevents double-hashing or erroring on missing passwords.
 // ============================================================
 userSchema.pre('save', async function() {
     // 'this' refers to the current user document being saved
     const user = this;
 
-    // Skip hashing if password wasn't modified
-    if (!user.isModified('password')) {
+    // Skip hashing if password is not set or wasn't modified
+    if (!user.password || !user.isModified('password')) {
         return;
     }
 
@@ -133,28 +188,12 @@ userSchema.pre('save', async function() {
 // ============================================================
 // INSTANCE METHOD — PASSWORD COMPARISON
 // ============================================================
-// comparePassword(candidatePassword)
-//
-// Used during login to verify if the provided password matches
-// the stored hashed password.
-//
-// bcrypt.compare() automatically:
-// 1. Extracts the salt from the stored hash
-// 2. Hashes the candidate password with that salt
-// 3. Compares the two hashes
-//
-// Parameters:
-//   candidatePassword (string) — plain-text password from login form
-//
-// Returns:
-//   boolean — true if passwords match, false otherwise
-//
-// Example usage in controller:
-//   const isMatch = await user.comparePassword('password123');
-//   if (isMatch) { // login successful }
-// ============================================================
 userSchema.methods.comparePassword = async function(candidatePassword) {
     try {
+        // If user has no password set (e.g. Google user), comparison fails
+        if (!this.password) {
+            return false;
+        }
         // 'this.password' is the hashed password stored in DB
         // bcrypt.compare() handles the comparison securely
         const isMatch = await bcrypt.compare(candidatePassword, this.password);

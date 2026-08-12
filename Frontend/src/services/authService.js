@@ -44,11 +44,11 @@ api.interceptors.request.use(
 // ============================================================
 // SIGNUP
 // POST /api/auth/signup
-// Body: { name, email, password }
+// Body: { name, email, password, phone }
 // Returns: { success, data: { token, user } }
 // ============================================================
-export const signup = async (name, email, password) => {
-    const response = await api.post('/signup', { name, email, password });
+export const signup = async (name, email, password, phone = null) => {
+    const response = await api.post('/signup', { name, email, password, phone });
     return response.data;
 };
 
@@ -62,6 +62,75 @@ export const login = async (email, password) => {
     const response = await api.post('/login', { email, password });
     return response.data;
 };
+
+// ============================================================
+// GOOGLE LOGIN
+// POST /api/auth/google
+// Body: { credential }
+// Returns: { success, data: { token, user } }
+// ============================================================
+export const googleLogin = async (credential) => {
+    const response = await api.post('/google', { credential });
+    return response.data;
+};
+
+// ============================================================
+// FORGOT PASSWORD (EMAIL RESET LINK)
+// POST /api/auth/forgot-password
+// Body: { email }
+// Returns: { success, message }
+// ============================================================
+export const forgotPassword = async (email) => {
+    const response = await api.post('/forgot-password', { email });
+    return response.data;
+};
+
+// ============================================================
+// RESET PASSWORD (EMAIL RESET LINK)
+// POST /api/auth/reset-password/:token
+// Body: { password }
+// Returns: { success, message }
+// ============================================================
+export const resetPassword = async (token, password) => {
+    const response = await api.post(`/reset-password/${token}`, { password });
+    return response.data;
+};
+
+// ============================================================
+// SEND OTP (DUAL METHOD: EMAIL / PHONE)
+// POST /api/auth/send-otp
+// Body: { method: 'email' | 'phone', target }
+// Returns: { success, message }
+// ============================================================
+export const sendOtp = async (method, target) => {
+    const response = await api.post('/send-otp', { method, target });
+    return response.data;
+};
+
+// ============================================================
+// VERIFY OTP (VALIDATE 6-DIGIT CODE)
+// POST /api/auth/verify-otp
+// Body: { target, otp, method }
+// Returns: { success, resetSessionToken }
+// ============================================================
+export const verifyOtp = async (target, otp, method) => {
+    const response = await api.post('/verify-otp', { target, otp, method });
+    return response.data;
+};
+
+// ============================================================
+// RESET PASSWORD WITH OTP TOKEN
+// POST /api/auth/reset-password-otp
+// Body: { resetSessionToken, password }
+// Returns: { success, message }
+// ============================================================
+export const resetPasswordWithOtp = async (resetSessionToken, password) => {
+    const response = await api.post('/reset-password-otp', { resetSessionToken, password });
+    return response.data;
+};
+
+
+
 
 // ============================================================
 // GET PROFILE

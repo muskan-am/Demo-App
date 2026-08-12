@@ -32,14 +32,7 @@ export const AuthProvider = ({ children }) => {
     // This prevents a flash of the login page when user is already logged in
     const [loading, setLoading] = useState(true);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-    // ========================================
-    // RESTORE SESSION ON APP LOAD
-    // On first render, check if token & user
-    // exist in localStorage (persisted login).
-    // Also validates token hasn't expired by
-    // decoding the JWT payload and checking exp.
-    // ========================================
+    
     useEffect(() => {
         const storedToken = localStorage.getItem('token');
         const storedUser  = localStorage.getItem('user');
