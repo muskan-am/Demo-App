@@ -97,24 +97,24 @@ export const resetPassword = async (token, password) => {
 };
 
 // ============================================================
-// SEND OTP (DUAL METHOD: EMAIL / PHONE)
+// SEND OTP (EMAIL METHOD)
 // POST /api/auth/send-otp
-// Body: { method: 'email' | 'phone', target }
+// Body: { target } (Email address)
 // Returns: { success, message }
 // ============================================================
-export const sendOtp = async (method, target) => {
-    const response = await api.post('/send-otp', { method, target });
+export const sendOtp = async (target) => {
+    const response = await api.post('/send-otp', { method: 'email', target });
     return response.data;
 };
 
 // ============================================================
 // VERIFY OTP (VALIDATE 6-DIGIT CODE)
 // POST /api/auth/verify-otp
-// Body: { target, otp, method }
+// Body: { target, otp }
 // Returns: { success, resetSessionToken }
 // ============================================================
-export const verifyOtp = async (target, otp, method) => {
-    const response = await api.post('/verify-otp', { target, otp, method });
+export const verifyOtp = async (target, otp) => {
+    const response = await api.post('/verify-otp', { target, otp, method: 'email' });
     return response.data;
 };
 

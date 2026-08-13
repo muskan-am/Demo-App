@@ -1,8 +1,8 @@
 // ============================================================
-// ForgotPassword.jsx — Dual-Option (Email / Phone) OTP Reset Wizard
+// ForgotPassword.jsx — Email OTP Reset Wizard
 // ============================================================
 // Interactive 3-Step Password Reset:
-// 1. Choose Method (Email or Phone) & Send 6-Digit OTP
+// 1. Enter Registered Email & Send 6-Digit OTP
 // 2. Enter & Verify 6-Digit OTP Code
 // 3. Reset Password & Confirm
 // ============================================================
@@ -39,15 +39,12 @@ const ForgotPassword = () => {
 
     // ========================================
     // WIZARD STEP STATE
-    // 1: Choose Method & Target
+    // 1: Enter Email & Send OTP
     // 2: Enter & Verify OTP
     // 3: Set New Password
     // 4: Success Screen
     // ========================================
     const [step, setStep] = useState(1);
-
-    // Method: 'email' | 'phone'
-    const [method, setMethod] = useState('email');
     const [target, setTarget] = useState('');
 
     // OTP Array (6 digits)
@@ -84,34 +81,17 @@ const ForgotPassword = () => {
         return () => clearInterval(interval);
     }, [timer]);
 
-    // Handle Method Tab Switch
-    const handleMethodChange = (selectedMethod) => {
-        setMethod(selectedMethod);
-        setTarget('');
-        setFieldError('');
-        setError('');
-        setSuccess('');
-    };
-
     // Step 1 Validation
     const validateTarget = () => {
         if (!target.trim()) {
-            setFieldError(method === 'email' ? 'Email is required' : 'Phone number is required');
+            setFieldError('Email address is required');
             return false;
         }
 
-        if (method === 'email') {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(target.trim())) {
-                setFieldError('Please enter a valid email address');
-                return false;
-            }
-        } else {
-            const phoneRegex = /^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s./0-9]{6,14}$/;
-            if (!phoneRegex.test(target.trim())) {
-                setFieldError('Please enter a valid phone number');
-                return false;
-            }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(target.trim())) {
+            setFieldError('Please enter a valid email address');
+            return false;
         }
         return true;
     };
@@ -127,8 +107,8 @@ const ForgotPassword = () => {
         setSuccess('');
 
         try {
-            const response = await sendOtp(method, target.trim());
-            setSuccess(response.message || 'OTP verification code sent successfully!');
+            const response = await sendOtp(target.trim());
+            setSuccess(response.message || 'OTP verification code sent successfully to your email!');
             setTimer(30); // 30 second resend timer
             setStep(2);
         } catch (err) {
@@ -188,7 +168,7 @@ const ForgotPassword = () => {
         setSuccess('');
 
         try {
-            const response = await verifyOtp(target.trim(), fullOtp, method);
+            const response = await verifyOtp(target.trim(), fullOtp);
             setResetSessionToken(response.resetSessionToken);
             setSuccess('OTP verified successfully!');
             setStep(3);
@@ -245,8 +225,8 @@ const ForgotPassword = () => {
                 <div className="auth-header">
                     <h1 className="auth-title">Forgot Password?</h1>
                     <p className="auth-subtitle">
-                        {step === 1 && 'Choose how you want to receive your 6-digit OTP code.'}
-                        {step === 2 && `Enter the 6-digit OTP sent to your ${method === 'email' ? 'email' : 'phone number'}.`}
+                        {step === 1 && 'Enter your registered email address to receive a 6-digit OTP code.'}
+                        {step === 2 && 'Enter the 6-digit OTP sent to your registered email address.'}
                         {step === 3 && 'Enter and confirm your new password.'}
                         {step === 4 && 'Your password has been successfully updated.'}
                     </p>
@@ -284,7 +264,7 @@ const ForgotPassword = () => {
                 </AnimatePresence>
 
                 {/* ============================================================
-                    STEP 1: METHOD SELECTION & TARGET INPUT
+                    STEP 1: EMAIL INPUT FOR OTP
                 ============================================================ */}
                 {step === 1 && (
                     <motion.form
@@ -295,32 +275,14 @@ const ForgotPassword = () => {
                         initial="hidden"
                         animate="visible"
                     >
-                        {/* ---- Method Switcher Tabs ---- */}
-                        <motion.div className="otp-method-tabs" variants={fieldVariants}>
-                            <button
-                                type="button"
-                                className={`otp-tab-btn ${method === 'email' ? 'active' : ''}`}
-                                onClick={() => handleMethodChange('email')}
-                            >
-                                <span>📧</span> Reset via Email
-                            </button>
-                            <button
-                                type="button"
-                                className={`otp-tab-btn ${method === 'phone' ? 'active' : ''}`}
-                                onClick={() => handleMethodChange('phone')}
-                            >
-                                <span>📱</span> Reset via Phone
-                            </button>
-                        </motion.div>
-
                         {/* ---- Target Field ---- */}
                         <motion.div className="form-group" variants={fieldVariants}>
                             <label htmlFor="target" className="form-label">
-                                {method === 'email' ? 'Registered Email Address' : 'Registered Phone Number'}
+                                Registered Email Address
                             </label>
                             <input
                                 id="target"
-                                type={method === 'email' ? 'email' : 'tel'}
+                                type="email"
                                 name="target"
                                 value={target}
                                 onChange={(e) => {
@@ -328,7 +290,7 @@ const ForgotPassword = () => {
                                     setFieldError('');
                                     setError('');
                                 }}
-                                placeholder={method === 'email' ? 'john@example.com' : '+1 234 567 8900'}
+                                placeholder="john@example.com"
                                 className={`form-input ${fieldError ? 'input-error' : ''}`}
                                 disabled={submitting}
                                 autoFocus
@@ -416,7 +378,7 @@ const ForgotPassword = () => {
                             </motion.button>
                         </motion.div>
 
-                        {/* ---- Resend Option & Back to Target ---- */}
+                        {/* ---- Resend Option & Back to Email ---- */}
                         <div className="otp-resend-row">
                             {timer > 0 ? (
                                 <span className="otp-timer-text">Resend OTP in <strong>{timer}s</strong></span>
@@ -440,7 +402,7 @@ const ForgotPassword = () => {
                                     setSuccess('');
                                 }}
                             >
-                                Change {method === 'email' ? 'Email' : 'Phone'}
+                                Change Email
                             </button>
                         </div>
                     </motion.form>

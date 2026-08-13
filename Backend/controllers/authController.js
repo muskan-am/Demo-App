@@ -3,14 +3,13 @@
 // ============================================================
 // All authentication operations with proper validation,
 // security, error handling, and status codes.
-// ============================================================
+// ==========================================================
 
 const crypto = require('crypto');
 const User = require('../models/User');
 const { generateToken } = require('../jwt');
 const { OAuth2Client } = require('google-auth-library');
 const sendEmail = require('../utils/email');
-const sendSMS = require('../utils/sms');
 
 
 
@@ -727,39 +726,32 @@ const resetPassword = async (req, res) => {
 };
 
 // ============================================================
-// SEND OTP — Generate 6-Digit OTP & Send via Email or SMS
+// ============================================================
+// SEND OTP — Generate 6-Digit OTP & Send via Email
 // ============================================================
 // POST /api/auth/send-otp
-// Request Body: { method: 'email' | 'phone', target }
+// Request Body: { target } (Email address)
 // ============================================================
 const sendOtp = async (req, res) => {
     try {
-        const { method, target } = req.body;
+        const { target, email } = req.body;
+        const targetEmail = (email || target || '').trim().toLowerCase();
 
-        if (!method || !target) {
+        if (!targetEmail) {
             return res.status(400).json({
                 success: false,
-                message: 'Both verification method and target (email or phone) are required.'
+                message: 'Registered email address is required.'
             });
         }
 
-        const genericMessage = method === 'phone'
-            ? 'If an account with that phone number exists, an OTP verification code has been sent.'
-            : 'If an account with that email address exists, an OTP verification code has been sent.';
+        const genericMessage = 'If an account with that email address exists, an OTP verification code has been sent.';
 
-        const normalizedTarget = target.trim();
-        let user = null;
-
-        if (method === 'phone') {
-            user = await User.findOne({ phone: normalizedTarget });
-        } else {
-            user = await User.findOne({ email: normalizedTarget.toLowerCase() });
-        }
+        const user = await User.findOne({ email: targetEmail });
 
         if (!user) {
             console.log(`\n============================================================`);
-            console.log(`[DEV OTP NOTICE] Password reset requested for: ${normalizedTarget}`);
-            console.log(`[REASON]: This email/phone is NOT YET registered in MongoDB.`);
+            console.log(`[DEV OTP NOTICE] Password reset requested for: ${targetEmail}`);
+            console.log(`[REASON]: This email is NOT YET registered in MongoDB.`);
             console.log(`[ACTION NEEDED]: Please register an account first at http://localhost:5173/signup`);
             console.log(`============================================================\n`);
 
@@ -768,7 +760,6 @@ const sendOtp = async (req, res) => {
                 message: genericMessage
             });
         }
-
 
         if (!user.isActive) {
             return res.status(403).json({
@@ -792,19 +783,12 @@ const sendOtp = async (req, res) => {
 
         await user.save({ validateBeforeSave: false });
 
-        // 4. Send OTP via chosen method
-        if (method === 'phone') {
-            await sendSMS({
-                phone: user.phone || normalizedTarget,
-                otp: otp
-            });
-        } else {
-            await sendEmail({
-                email: user.email,
-                subject: 'Your Password Reset OTP Code',
-                otp: otp
-            });
-        }
+        // 4. Send OTP via Email
+        await sendEmail({
+            email: user.email,
+            subject: 'Your Password Reset OTP Code',
+            otp: otp
+        });
 
         return res.status(200).json({
             success: true,
@@ -824,38 +808,31 @@ const sendOtp = async (req, res) => {
 // VERIFY OTP — Validate 6-Digit Code & Return Reset Token
 // ============================================================
 // POST /api/auth/verify-otp
-// Request Body: { method: 'email' | 'phone', target, otp }
+// Request Body: { target, otp }
 // ============================================================
 const verifyOtp = async (req, res) => {
     try {
-        const { target, otp, method } = req.body;
+        const { target, email, otp } = req.body;
+        const targetEmail = (email || target || '').trim().toLowerCase();
 
-        if (!target || !otp) {
+        if (!targetEmail || !otp) {
             return res.status(400).json({
                 success: false,
-                message: 'Both target (email or phone) and 6-digit OTP code are required.'
+                message: 'Both registered email address and 6-digit OTP code are required.'
             });
         }
 
-        const normalizedTarget = target.trim();
         const hashedOtp = crypto
             .createHash('sha256')
             .update(otp.trim())
             .digest('hex');
 
-        // Find user by matching hashed OTP and resetOtpExpire > Date.now()
-        let query = {
+        // Find user by matching email, hashed OTP and resetOtpExpire > Date.now()
+        const user = await User.findOne({
+            email: targetEmail,
             resetOtp: hashedOtp,
             resetOtpExpire: { $gt: Date.now() }
-        };
-
-        if (method === 'phone') {
-            query.phone = normalizedTarget;
-        } else {
-            query.email = normalizedTarget.toLowerCase();
-        }
-
-        const user = await User.findOne(query);
+        });
 
         if (!user) {
             return res.status(400).json({
